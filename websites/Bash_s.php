@@ -112,7 +112,7 @@ class Bash_s
      * @param string $parameters
      * @return array of Quotes from Bash.im main web page with first quotes on main page
      */
-    public function getQuotesWithMain(string $parameters = '')
+    public function getQuotesWithMain(string $parameters)
     {
 
         if($parameters != null && strlen($parameters) > 0)
