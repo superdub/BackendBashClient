@@ -7,13 +7,14 @@
  */
 include_once 'model/HtmlParser.php';
 include_once 'model/HtmlDownload.php';
+include_once 'data/BashQuotes.php';
 
 class Bash_s
 {
 
     private $countQuotes;
 
-    function __construct($countQuotes)
+    function __construct()
     {
         try {
             $this->countQuotes = BashInfo::getCountQuotes();
@@ -70,17 +71,69 @@ class Bash_s
     private function getQuotesWithNumberToOver($linkPageFirst, $number, &$html_parser, &$html_download)
     {
         $html_page = $html_download -> download($linkPageFirst);
-        $_array = [];
         $array = [];
+        $_likes =[];
+        $_texts =[];
+        $_dates =[];
+        $_ids =[];
+        foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'span.rating') as $text1) {
+            $_likes[] = $text1->innertext;
+        }
         foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'div.text') as $text1) {
-            $_array[] = $text1->innertext;
+            $_texts[] = $text1->innertext;
         }
+        foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'span.date') as $text1) {
+            $_dates[] = $text1->innertext;
+        }
+        foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'a.id') as $text1) {
+            $_ids[] = $text1->innertext;
+        }
+
         for ($i = 0; $i < $number; $i++)
-            $_array[$i] = null;
-        foreach ($_array as $text)
         {
-            if($text!=null) $array[] = $text;
+            $_likes[$i] = null;
+            $_texts[$i] = null;
+            $_dates[$i] = null;
+            $_ids[$i] = null;
+
         }
+        $likes =[];
+        $texts =[];
+        $dates =[];
+        $ids =[];
+        foreach ($_texts as $text)
+        {
+            if($text != null)
+            {
+                $texts[] = $text;
+            }
+        }
+        foreach ($_likes as $like)
+        {
+            if($like != null)
+            {
+                $likes[] = $like;
+            }
+        }
+        foreach ($_dates as $date)
+        {
+            if($date != null)
+            {
+                $dates[] = $date;
+            }
+        }
+        foreach ($_ids as $id)
+        {
+            if($id != null)
+            {
+                $ids[] = $id;
+            }
+        }
+        $array['likes'] = $likes;
+        $array['texts'] = $texts;
+        $array['dates'] = $dates;
+        $array['ids'] = $ids;
+
         return $array;
     }
 
@@ -92,43 +145,113 @@ class Bash_s
      */
     private function getQuotesWithNumberToOverWithParserAndDownload($linkPageFirst, $number)
     {
-        $html_parser = new HtmlParser();
         $html_download = new HtmlDownload();
+        $htmlParser = new HtmlParser();
         $html_page = $html_download -> download($linkPageFirst);
-        $_array = [];
         $array = [];
-        foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'div.text') as $text1) {
-            $_array[] = $text1->innertext;
+        $_likes =[];
+        $_texts =[];
+        $_dates =[];
+        $_ids =[];
+        foreach ($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page), 'span.rating') as $text1) {
+            $_likes[] = $text1->innertext;
         }
-        for ($i = 0; $i <= $number; $i++)
-            $array[$i] = $_array[$i];
-        unset($html_page);
+        foreach ($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page), 'div.text') as $text1) {
+            $_texts[] = $text1->innertext;
+        }
+        foreach ($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page), 'span.date') as $text1) {
+            $_dates[] = $text1->innertext;
+        }
+        foreach ($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page), 'a.id') as $text1) {
+            $_ids[] = $text1->innertext;
+        }
+
+        for ($i = 0; $i < $number; $i++)
+        {
+            $_likes[$i] = null;
+            $_texts[$i] = null;
+            $_dates[$i] = null;
+            $_ids[$i] = null;
+
+        }
+        $likes =[];
+        $texts =[];
+        $dates =[];
+        $ids =[];
+        foreach ($_texts as $text)
+        {
+            if($text != null)
+            {
+                $texts[] = $text;
+            }
+        }
+        foreach ($_likes as $like)
+        {
+            if($like != null)
+            {
+                $likes[] = $like;
+            }
+        }
+        foreach ($_dates as $date)
+        {
+            if($date != null)
+            {
+                $dates[] = $date;
+            }
+        }
+        foreach ($_ids as $id)
+        {
+            if($id != null)
+            {
+                $ids[] = $id;
+            }
+        }
+        $array['likes'] = $likes;
+        $array['texts'] = $texts;
+        $array['dates'] = $dates;
+        $array['ids'] = $ids;
         unset($html_download);
-        unset($html_parser);
+        unset($htmlParser);
         return $array;
     }
 
     /**
      * @param string $parameters
-     * @return array of Quotes from Bash.im main web page with first quotes on main page
+     * @return string json of Quotes from Bash.im main web page with first quotes on main page
      */
     public function getQuotesWithMain(string $parameters)
     {
-
+        if(!is_numeric($parameters)) {echo 'parameters is not number'; return null;}
         if($parameters != null && strlen($parameters) > 0)
         {
             $html_download = new HtmlDownload();
             $htmlParser = new HtmlParser();
+            $array = new BashQuotes();
             $parameters = (int)$parameters;
             $count = $this->getCountPages($parameters,$this->countQuotes);
-            $array = [];
+            $likes =[];
+            $texts =[];
+            $dates =[];
+            $ids =[];
             for($i=0;$i<$count[0]-1;$i++)
             {
                 $index = $this->getMainIndexPage() - $i;
                 $html_page = $html_download -> download(BashInfo::$BASH_URL.'index/'.$index);
                 foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
                 {
-                    $array[] = $text1;
+                    $texts[] = $text1->innertext;
+                }
+                foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
+                {
+                    $likes[] = $text1->innertext;
+                }
+                foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
+                {
+                    $dates[] = $text1->innertext;
+                }
+                foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
+                {
+                    $ids[] = $text1->innertext;
                 }
             }
             $index = $this->getMainIndexPage() - $count[0]+1;
@@ -138,13 +261,44 @@ class Bash_s
             {
                 if(!$i) break;
                 $i--;
-                $array[] = $text1;
+                $texts[] = $text1->innertext;
+            }
+            $i = $count[1];
+            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
+            {
+                if(!$i) break;
+                $i--;
+                $likes[] = $text1->innertext;
+            }
+            $i = $count[1];
+            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
+            {
+                if(!$i) break;
+                $i--;
+                $dates[] = $text1->innertext;
+            }
+            $i = $count[1];
+            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
+            {
+                if(!$i) break;
+                $i--;
+                $ids[] = $text1->innertext;
+            }
+
+            for ($i=0;$i<$parameters;$i++)
+            {
+                $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
             }
 
             unset($html_download);
             unset($htmlParser);
-            return $array;
+            unset($ids);
+            unset($texts);
+            unset($likes);
+            unset($dates);
+            return $array->Get();
         }
+        echo 'parameters is null or wrong';
         return null;
     }
 
@@ -152,12 +306,12 @@ class Bash_s
     /**
      * @param string $number
      * @param string $count
-     * @return array quotes from $number to $count with main page
+     * @return string json quotes from $number to $count with main page
      */
     public function getQuotesWithNumber(string $number,string $count)
     {
         if(!is_numeric($number) || !is_numeric($count)) {echo 'parameters is not number'; return null;}
-        if($count != null && strlen($count) > 0 && $number != null && strlen($number) > 0) {
+        if($count != null && strlen($count) > 0 && $number != null && strlen($number) > 0 && $number > 0 && $count > 0) {
 
             $html_parser = new HtmlParser();
             $html_download = new HtmlDownload();
@@ -172,61 +326,176 @@ class Bash_s
 
 
             $indexPageBefore = $this->getMainIndexPage() - $countPageBeforeFirst[0]+1;
-            $indexPageAfter = $this->getMainIndexPage() - $countPageAfterFirst[0]+1;
+          //  $indexPageAfter = $this->getMainIndexPage() - $countPageAfterFirst[0]+1;
 
             $linkPageFirst = BashInfo::$BASH_URL.'index/'.$indexPageBefore;
-            $linkPageLast = BashInfo::$BASH_URL.'index/'.$indexPageAfter;
+           // $linkPageLast = BashInfo::$BASH_URL.'index/'.$indexPageAfter;
 
 
             $html_page = $html_download -> download($linkPageFirst);
 
-            $_array = [];
-            $array = [];
 
-            if($countPageAfterFirst[1] > $countPageBeforeFirst[1] && $countPageAfterFirst[0]  == $countPageBeforeFirst[0]) {
+            $array = new BashQuotes();
+            $likes =[]; $_likes =[];
+            $texts =[];  $_texts =[];
+            $dates =[];  $_dates =[];
+            $ids =[];  $_ids =[];
 
-                foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'div.text') as $text1) {
-                    $_array[] = $text1->innertext;
-                }
-                for ($i = $countPageBeforeFirst[1]-1; $i < $countPageAfterFirst[1]-1; $i++)
-                    $array[$i] = $_array[$i];
-                unset($html_page);
-                unset($html_download);
-                unset($html_parser);
-                echo count($array);
-             return $array;
+
+
+
+           if($countPageAfterFirst[1] > $countPageBeforeFirst[1] && $countPageAfterFirst[0]  == $countPageBeforeFirst[0]) {
+
+               foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
+               {
+                   $texts[] = $text1->innertext;
+               }
+               foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
+               {
+                   $likes[] = $text1->innertext;
+               }
+               foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
+               {
+                   $dates[] = $text1->innertext;
+               }
+               foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
+               {
+                   $ids[] = $text1->innertext;
+               }
+
+               for ($i = $countPageBeforeFirst[1]-1; $i < $countPageAfterFirst[1]-1; $i++)
+               {
+                   $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+               }
+
+               unset($html_page);
+               unset($html_download);
+               unset($likes);
+               unset($texts);
+               unset($dates);
+               unset($ids);
+               unset($html_parser);
+               return $array->Get();
             }
 
-            $array = $this->getQuotesWithNumberToOver($linkPageFirst,$countPageBeforeFirst[1],$html_parser,$html_download);
-            if(count($array) == $count) return $array;
+
+            $_array = $this->getQuotesWithNumberToOver($linkPageFirst,$countPageBeforeFirst[1],$html_parser,$html_download);
+
+           foreach ($_array as $item => $value)
+           {
+
+               if($item == 'likes') {foreach ($value as $like) $likes[] = $like;}
+               if($item == 'texts') {foreach ($value as $text) $texts[] = $text;}
+               if($item == 'dates') {foreach ($value as $date) $dates[] = $date;}
+               if($item == 'ids') {foreach ($value as $id) $ids[] = $id;}
+           }
+
+
+            if(count($texts) == $count)
+            {
+                for($i=0;$i<$count;$i++)
+                {
+                    $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+                }
+                return $array->Get();
+            }
 
             for($i=$countPageBeforeFirst[0]+1;$i<$countPageAfterFirst[0];$i++)
             {
                 $index = $indexPageBefore - $i;
                 $link = BashInfo::$BASH_URL.'index/'.$index;
                 $local_array = $this->getQuotesWithNumberToOver($link,0,$html_parser,$html_download);
-                foreach ($local_array as $text1) $array[] = $text1;
-            }
-            if(count($array) == $count) return $array;
+                foreach ($local_array as $item => $value)
+                {
 
-            $last_array = [];
+                    if($item == 'likes') {foreach ($value as $like) $likes[] = $like;}
+                    if($item == 'texts') {foreach ($value as $text) $texts[] = $text;}
+                    if($item == 'dates') {foreach ($value as $date) $dates[] = $date;}
+                    if($item == 'ids') {foreach ($value as $id) $ids[] = $id;}
+                }
+            }
+            if(count($texts) == $count)
+            {
+                for($i=0;$i<$count;$i++)
+                {
+                    $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+                }
+                return $array->Get();
+            }
+
+
             $index = $this->getMainIndexPage()-$countPageAfterFirst[0];
 
             $html_page = $html_download->download(BashInfo::$BASH_URL.'index/'.BashInfo::$BASH_URL.'index/'.$index);
-            foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'div.text') as $text1) {
-                $last_array[] = $text1->innertext;
+            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
+            {
+                $_texts[] = $text1->innertext;
+            }
+            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
+            {
+                $_likes[] = $text1->innertext;
+            }
+            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
+            {
+                $_dates[] = $text1->innertext;
+            }
+            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
+            {
+                $_ids[] = $text1->innertext;
             }
             for($i=$countPageAfterFirst[1];$i<$this->countQuotes;$i++)
-              $last_array[$i] = null;
-
-            foreach ($last_array as $item) {
-                if($item!=null)
-                $array[] = $item;
+            {
+                    $_likes[$i] = null;
+                    $_texts[$i] = null;
+                    $_dates[$i] = null;
+                    $_ids[$i] = null;
             }
+
+
+            foreach ($_texts as $text)
+            {
+                if($text != null)
+                {
+                    $texts[] = $text;
+                }
+            }
+            foreach ($_likes as $like)
+            {
+                if($like != null)
+                {
+                    $likes[] = $like;
+                }
+            }
+            foreach ($_dates as $date)
+            {
+                if($date != null)
+                {
+                    $dates[] = $date;
+                }
+            }
+            foreach ($_ids as $id)
+            {
+                if($id != null)
+                {
+                    $ids[] = $id;
+                }
+            }
+
+            for($i=0;$i<$count;$i++)
+            {
+                $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+            }
+
             unset($html_page);
             unset($html_download);
             unset($html_parser);
-            return $array;
+            unset($texts); unset($_texts);
+            unset($likes);  unset($_likes);
+            unset($dates); unset($_dates);
+            unset($ids); unset($_ids);
+            unset($_array);
+            unset($local_array);
+            return $array->Get();
 
         }
         echo 'parameters is wrong or null';
@@ -236,26 +505,39 @@ class Bash_s
 
     /**
      * @param string $id
-     * @return string quote by id but can not find quote
+     * @return string json quote by id but this function can not find quote
      */
     public function getQuotesById(string $id)
     {
         if(!is_numeric($id)) {echo 'parameters is not number'; return null;}
-        if($id != null && strlen($id) > 0 && (int)$id != 0 && (int)$id < 0) {
+        if($id != null && strlen($id) > 0 && (int)$id != 0 && (int)$id > 0) {
             $html_parser = new HtmlParser();
             $html_download = new HtmlDownload();
-            $text = '';
+            $quote = new BashQuotes();
+            $_text = '';
+            $_id = '';
+            $_like = '';
+            $_date = '';
             $url = BashInfo::$BASH_URL.'quote/'.$id;
-            echo $url,'   ';
             $html_page = $html_download -> download($url);
-            if(strlen($html_page) <= 0) {echo 'wrong'; return null;}
+            if(strlen($html_page) <= 0) {echo 'wrong this quote don\'t found'; return null;}
             foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'div.text') as $text1) {
-                $text .= $text1->innertext;
+                $_text .= $text1->innertext;
             }
+            foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'span.rating') as $text1) {
+                $_like .= $text1->innertext;
+            }
+            foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'span.date') as $text1) {
+                $_date .= $text1->innertext;
+            }
+            foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'a.id') as $text1) {
+                $_id .= $text1->innertext;
+            }
+            $quote->Add($_id,$_text,$_like,$_date);
             unset($html_page);
             unset($html_download);
             unset($html_parser);
-            return $text;
+            return $quote->Get();
         }
         echo 'parameters is null or wrong'; return null;
     }

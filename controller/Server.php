@@ -13,8 +13,10 @@
 
       function __construct($countQuotes)
       {
-          $this->bash_s = new Bash_s($countQuotes);
-        echo $this->bash_s->getQuotesById('35000');
+          $this->bash_s = new Bash_s();
+         // echo $this->bash_s->getQuotesWithNumber('1','10');
+          echo $this->bash_s->getQuotesById('447600');
+        //  echo $this->bash_s->getQuotesWithMain('1000');
       }
 
 
