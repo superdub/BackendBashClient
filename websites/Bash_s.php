@@ -311,6 +311,7 @@ class Bash_s
     public function getQuotesWithNumber(string $number,string $count)
     {
         if(!is_numeric($number) || !is_numeric($count)) {echo 'parameters is not number'; return null;}
+        if((int)$number == 0) {echo 'number of first quotes can not 0';return null;}
         if($count != null && strlen($count) > 0 && $number != null && strlen($number) > 0 && $number > 0 && $count > 0) {
 
             $html_parser = new HtmlParser();
@@ -542,5 +543,109 @@ class Bash_s
         echo 'parameters is null or wrong'; return null;
     }
 
+
+    /**
+     * @param string $number
+     * @param string $count
+     * @return string json quotes by random page
+     */
+    public function getRandomQuotes()
+    {
+
+        $html_parser = new HtmlParser();
+        $html_download = new HtmlDownload();
+        $html_page = $html_download->download(BashInfo::$BASH_URL.'random/');
+        $array = new BashQuotes();
+        $likes =[];
+        $texts =[];
+        $dates =[];
+        $ids =[];
+
+        foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
+        {
+            $texts[] = $text1->innertext;
+        }
+        foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
+        {
+            $likes[] = $text1->innertext;
+        }
+        foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
+        {
+            $dates[] = $text1->innertext;
+        }
+        foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
+        {
+            $ids[] = $text1->innertext;
+        }
+
+
+        for ($i = 0; $i < $this->countQuotes; $i++)
+        {
+            $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+        }
+        unset($html_parser);
+        unset($html_download);
+        unset($html_page);
+        unset($likes);
+        unset($texts);
+        unset($dates);
+        unset($ids);
+        return $array->Get();
+
+    }
+
+
+    public function getRandomQuotesWithNumber(string $number,string $count)
+    {
+        if(!is_numeric($number) || !is_numeric($count)) {echo 'parameters is not number'; return null;}
+        if((int)$number == 0) {echo 'number of first quotes can not 0';return null;}
+        if($count != null && strlen($count) > 0 && $number != null && strlen($number) > 0 && $number > 0 && $count > 0) {
+            $html_parser = new HtmlParser();
+            $html_download = new HtmlDownload();
+            $html_page = $html_download->download(BashInfo::$BASH_URL.'random/');
+            $array = new BashQuotes();
+            $likes =[];
+            $texts =[];
+            $dates =[];
+            $ids =[];
+
+            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
+            {
+                $texts[] = $text1->innertext;
+            }
+            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
+            {
+                $likes[] = $text1->innertext;
+            }
+            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
+            {
+                $dates[] = $text1->innertext;
+            }
+            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
+            {
+                $ids[] = $text1->innertext;
+            }
+
+
+            for ($i = $number; $i < ($number+$count); $i++)
+            {
+                if($i <count($texts))
+                $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+            }
+
+
+
+            unset($html_parser);
+            unset($html_download);
+            unset($html_page);
+            unset($likes);
+            unset($texts);
+            unset($dates);
+            unset($ids);
+            return $array->Get();
+        }
+        echo 'parameters is wrong or null';
+        return null;
+    }
 
 }
