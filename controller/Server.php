@@ -14,11 +14,12 @@
       function __construct($countQuotes)
       {
           $this->bash_s = new Bash_s();
-          //echo $this->bash_s->getQuotesWithNumber('1','10');
+          //echo $this->bash_s->getQuotesWithNumber('0','10');
           //echo $this->bash_s->getQuotesById('447600');
-          //echo $this->bash_s->getQuotesWithMain('1000');
-          //echo $this->bash_s->getRandomQuotes();
-          //echo $this->bash_s->getRandomQuotesWithNumber(1,50);
+          //echo $this->bash_s->getQuotesWithMain('30');
+          echo $this->bash_s->getRandomQuotes();
+          //echo $this->bash_s->getRandomQuotesWithNumber('303');
+          //echo $this->bash_s->getRatingQuotesWithMain('10');
       }
 
 

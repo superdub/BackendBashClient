@@ -38,6 +38,35 @@ class Bash_s
 
 
     /**
+     * @param $parser
+     * @param $html_page
+     * @param $dates
+     * @param $texts
+     * @param $likes
+     * @param $ids
+     */
+    private function parseForBashQuotes(&$parser, &$html_page, &$dates, &$texts, &$likes, &$ids)
+    {
+        foreach($parser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
+        {
+            $texts[] = $text1->innertext;
+        }
+        foreach($parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
+        {
+            $likes[] = $text1->innertext;
+        }
+        foreach($parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
+        {
+            $dates[] = $text1->innertext;
+        }
+        foreach($parser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
+        {
+            $ids[] = $text1->innertext;
+        }
+    }
+
+
+    /**
      * @return int index Bash.im main page
      */
     private function getMainIndexPage()
@@ -222,6 +251,7 @@ class Bash_s
     public function getQuotesWithMain(string $parameters)
     {
         if(!is_numeric($parameters)) {echo 'parameters is not number'; return null;}
+        if((int)$parameters == 0) {echo 'parameters can not 0'; return null;}
         if($parameters != null && strlen($parameters) > 0)
         {
             $html_download = new HtmlDownload();
@@ -237,26 +267,15 @@ class Bash_s
             {
                 $index = $this->getMainIndexPage() - $i;
                 $html_page = $html_download -> download(BashInfo::$BASH_URL.'index/'.$index);
-                foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
-                {
-                    $texts[] = $text1->innertext;
-                }
-                foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
-                {
-                    $likes[] = $text1->innertext;
-                }
-                foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
-                {
-                    $dates[] = $text1->innertext;
-                }
-                foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
-                {
-                    $ids[] = $text1->innertext;
-                }
+                $this->parseForBashQuotes($htmlParser,$html_page,$dates,$texts,$likes,$ids);
             }
             $index = $this->getMainIndexPage() - $count[0]+1;
             $html_page = $html_download -> download(BashInfo::$BASH_URL.'index/'.$index);
             $i = $count[1];
+
+
+            //улучшить код
+
             foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
             {
                 if(!$i) break;
@@ -284,12 +303,10 @@ class Bash_s
                 $i--;
                 $ids[] = $text1->innertext;
             }
-
             for ($i=0;$i<$parameters;$i++)
             {
                 $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
             }
-
             unset($html_download);
             unset($htmlParser);
             unset($ids);
@@ -364,6 +381,8 @@ class Bash_s
                    $ids[] = $text1->innertext;
                }
 
+
+
                for ($i = $countPageBeforeFirst[1]-1; $i < $countPageAfterFirst[1]-1; $i++)
                {
                    $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
@@ -421,6 +440,7 @@ class Bash_s
                 {
                     $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
                 }
+                echo count($texts);
                 return $array->Get();
             }
 
@@ -428,22 +448,11 @@ class Bash_s
             $index = $this->getMainIndexPage()-$countPageAfterFirst[0];
 
             $html_page = $html_download->download(BashInfo::$BASH_URL.'index/'.BashInfo::$BASH_URL.'index/'.$index);
-            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
-            {
-                $_texts[] = $text1->innertext;
-            }
-            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
-            {
-                $_likes[] = $text1->innertext;
-            }
-            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
-            {
-                $_dates[] = $text1->innertext;
-            }
-            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
-            {
-                $_ids[] = $text1->innertext;
-            }
+            $this->parseForBashQuotes($html_parser,$html_page,$_dates,$_texts,$_likes,$_ids);
+
+
+            //улучшуть код
+
             for($i=$countPageAfterFirst[1];$i<$this->countQuotes;$i++)
             {
                     $_likes[$i] = null;
@@ -481,7 +490,7 @@ class Bash_s
                     $ids[] = $id;
                 }
             }
-
+            echo count($texts);
             for($i=0;$i<$count;$i++)
             {
                 $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
@@ -547,7 +556,7 @@ class Bash_s
     /**
      * @param string $number
      * @param string $count
-     * @return string json quotes by random page
+     * @return string json all quotes by random page
      */
     public function getRandomQuotes()
     {
@@ -561,22 +570,7 @@ class Bash_s
         $dates =[];
         $ids =[];
 
-        foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
-        {
-            $texts[] = $text1->innertext;
-        }
-        foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
-        {
-            $likes[] = $text1->innertext;
-        }
-        foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
-        {
-            $dates[] = $text1->innertext;
-        }
-        foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
-        {
-            $ids[] = $text1->innertext;
-        }
+        $this->parseForBashQuotes($html_parser,$html_page,$dates,$texts,$likes,$ids);
 
 
         for ($i = 0; $i < $this->countQuotes; $i++)
@@ -595,56 +589,132 @@ class Bash_s
     }
 
 
-    public function getRandomQuotesWithNumber(string $number,string $count)
+    /**
+     * @param string $number
+     * @param string $count
+     * @return string json random some quotes
+     */
+    public function getRandomQuotesWithNumber(string $count)
     {
-        if(!is_numeric($number) || !is_numeric($count)) {echo 'parameters is not number'; return null;}
-        if((int)$number == 0) {echo 'number of first quotes can not 0';return null;}
-        if($count != null && strlen($count) > 0 && $number != null && strlen($number) > 0 && $number > 0 && $count > 0) {
+        if(!is_numeric($count)) {echo 'parameters is not number'; return null;}
+        if((int)$count == 0) {echo 'number of first quotes can not 0';return null;}
+
+        if($count != null && strlen($count) > 0 && $count > 0) {
             $html_parser = new HtmlParser();
             $html_download = new HtmlDownload();
-            $html_page = $html_download->download(BashInfo::$BASH_URL.'random/');
+            $count = (int)$count;
+
             $array = new BashQuotes();
+            $count_page = $this->getCountPages($count,$this->countQuotes);
+            print_r($count_page);
             $likes =[];
             $texts =[];
             $dates =[];
             $ids =[];
+            $_likes =[];
+            $_texts =[];
+            $_dates =[];
+            $_ids =[];
 
-            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
+            for($i=0;$i<$count_page[0]-1;$i++)
             {
-                $texts[] = $text1->innertext;
-            }
-            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
-            {
-                $likes[] = $text1->innertext;
-            }
-            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
-            {
-                $dates[] = $text1->innertext;
-            }
-            foreach($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
-            {
-                $ids[] = $text1->innertext;
-            }
 
+                $html_page = $html_download->download(BashInfo::$BASH_URL.'random/');
 
-            for ($i = $number; $i < ($number+$count); $i++)
+                $this->parseForBashQuotes($html_parser,$html_page,$dates,$texts,$likes,$ids);
+            }
+            $html_page = $html_download->download(BashInfo::$BASH_URL.'random/');
+
+            $this->parseForBashQuotes($html_parser,$html_page,$_dates,$_texts,$_likes,$_ids);
+
+            for($i = 0;$i<$count_page[1];$i++)
             {
-                if($i <count($texts))
+                $likes[] = $_likes[$i];
+                $texts[] = $_texts[$i];
+                $dates[] = $_dates[$i];
+                $ids[] = $_ids[$i];
+            }
+            for($i = 0;$i<$count;$i++)
+            {
                 $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
             }
-
-
-
-            unset($html_parser);
-            unset($html_download);
-            unset($html_page);
-            unset($likes);
-            unset($texts);
-            unset($dates);
-            unset($ids);
             return $array->Get();
         }
         echo 'parameters is wrong or null';
+        return null;
+    }
+
+
+    public function getRatingQuotesWithMain(string $parameters)
+    {
+        if(!is_numeric($parameters)) {echo 'parameters is not number'; return null;}
+        if($parameters != null && strlen($parameters) > 0)
+        {
+            $html_download = new HtmlDownload();
+            $htmlParser = new HtmlParser();
+            $array = new BashQuotes();
+            $parameters = (int)$parameters;
+            $count = $this->getCountPages($parameters,$this->countQuotes);
+            $likes =[];
+            $texts =[];
+            $dates =[];
+            $ids =[];
+            for($i=1;$i<$count[0]-1;$i++)
+            {
+                $index = $this->getMainIndexPage() + $i;
+                $html_page = $html_download -> download(BashInfo::$BASH_URL.'byrating/'.$index);
+                $this->parseForBashQuotes($html_parser,$html_page,$dates,$texts,$likes,$ids);
+            }
+            $index = 1 + $count[0]+1;
+            $html_page = $html_download -> download(BashInfo::$BASH_URL.'byrating/'.$index);
+            echo $index,'          ';
+            $i = $count[1];
+
+
+            //улучшить код
+
+            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
+            {
+                if(!$i) break;
+                $i--;
+                $texts[] = $text1->innertext;
+            }
+            $i = $count[1];
+            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
+            {
+                if(!$i) break;
+                $i--;
+                $likes[] = $text1->innertext;
+            }
+            $i = $count[1];
+            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
+            {
+                if(!$i) break;
+                $i--;
+                $dates[] = $text1->innertext;
+            }
+            $i = $count[1];
+            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
+            {
+                if(!$i) break;
+                $i--;
+                $ids[] = $text1->innertext;
+            }
+
+            for ($i=0;$i<$parameters;$i++)
+            {
+                $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+            }
+
+            unset($html_download);
+            unset($htmlParser);
+            unset($ids);
+            unset($texts);
+            unset($likes);
+            unset($dates);
+            return $array->Get();
+        }
+        echo 'parameters is null or wrong';
         return null;
     }
 

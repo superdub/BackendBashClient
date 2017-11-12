@@ -9,7 +9,7 @@
 
        static public $BASH_COUNT = 50;
 
-       //получение количества сообщений на главной странице
+       //получение количества сообщений на ёглавной странице
        static public function getCountQuotes()
        {
             $html_download = new HtmlDownload();
