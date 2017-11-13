@@ -105,18 +105,11 @@ class Bash_s
         $_texts =[];
         $_dates =[];
         $_ids =[];
-        foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'span.rating') as $text1) {
-            $_likes[] = $text1->innertext;
-        }
-        foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'div.text') as $text1) {
-            $_texts[] = $text1->innertext;
-        }
-        foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'span.date') as $text1) {
-            $_dates[] = $text1->innertext;
-        }
-        foreach ($html_parser->parse(iconv("windows-1251", "UTF-8", $html_page), 'a.id') as $text1) {
-            $_ids[] = $text1->innertext;
-        }
+        $this->parseForBashQuotes($html_parser,$html_page,$_dates,$_texts,$_likes,$_ids);
+
+
+        //улучшить код
+
 
         for ($i = 0; $i < $number; $i++)
         {
@@ -182,18 +175,7 @@ class Bash_s
         $_texts =[];
         $_dates =[];
         $_ids =[];
-        foreach ($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page), 'span.rating') as $text1) {
-            $_likes[] = $text1->innertext;
-        }
-        foreach ($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page), 'div.text') as $text1) {
-            $_texts[] = $text1->innertext;
-        }
-        foreach ($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page), 'span.date') as $text1) {
-            $_dates[] = $text1->innertext;
-        }
-        foreach ($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page), 'a.id') as $text1) {
-            $_ids[] = $text1->innertext;
-        }
+        $this->parseForBashQuotes($htmlParser,$html_page,$_dates,$_texts,$_likes,$_ids);
 
         for ($i = 0; $i < $number; $i++)
         {

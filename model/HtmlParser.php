@@ -16,7 +16,7 @@
         return null;
     }
 
-    private function find( $html = '',string $tg = '')
+    private function find($html,string $tg = '')
     {
       if(count($html->find($tg)))
         {
