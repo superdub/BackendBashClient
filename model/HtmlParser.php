@@ -16,7 +16,7 @@
         return null;
     }
 
-    private function find($html,string $tg = '')
+    private function find(simple_html_dom $html,string $tg)
     {
       if(count($html->find($tg)))
         {
@@ -26,7 +26,7 @@
             return $array;
         }
         echo 'error find';
-          return null;
+        return null;
     }
 
    }
