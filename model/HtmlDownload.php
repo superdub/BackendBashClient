@@ -4,7 +4,7 @@
      /**
       * download html page
       */
-     static function  download($url)
+     public static function  download($url)
      {
          if(filter_var($url, FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED))
          {
