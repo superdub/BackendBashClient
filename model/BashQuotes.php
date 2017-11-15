@@ -16,7 +16,10 @@ class BashQuotes
       $this->array = [];
   }
 
-  public function Add(string $id,string $text,string $like,string $date)
+    /**
+     * add new array in basic_array
+     */
+    public function Add(string $id, string $text, string $like, string $date)
   {
       $array = ['id' => $id,'text' =>$text,'like' => $like,'date' => $date];
       $this->array[] = $array;

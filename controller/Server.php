@@ -1,9 +1,4 @@
 <?php
-  include_once 'model/HtmlParser.php';
-  include_once 'model/HtmlDownload.php';
-  include_once 'model/BashInfo.php';
-  include_once 'websites/Bash_s.php';
-
 
   class Server
   {
@@ -16,7 +11,7 @@
           $this->bash_s = new Bash_s();
           //echo $this->bash_s->getQuotesWithNumber('0','10');
           //echo $this->bash_s->getQuotesById('447600');
-          //echo $this->bash_s->getQuotesWithMain('30');
+          echo $this->bash_s->getQuotesWithMain('10');
           //echo $this->bash_s->getRandomQuotes();
           //echo $this->bash_s->getRandomQuotesWithNumber('303');
           //echo $this->bash_s->getRatingQuotesWithMain('10');

@@ -1,6 +1,5 @@
 <?php
-   include_once 'model/HtmlDownload.php';
-   include_once 'model/HtmlParser.php';
+
    
    class BashInfo
    {
@@ -9,7 +8,10 @@
 
        static public $BASH_COUNT = 50;
 
-       //получение количества сообщений на ёглавной странице
+
+       /**
+        * get count of quotes on one page
+        */
        static public function getCountQuotes()
        {
             $html_download = new HtmlDownload();
@@ -30,7 +32,9 @@
        }
 
 
-       //получение количества лайков на главной странице
+       /**
+        *  get count of likes on one page
+        */
        static public function getCountLikes()
        {
             $html_download = new HtmlDownload();
@@ -52,8 +56,9 @@
        }
 
 
-
-       //получение количества дат на главной странице
+       /**
+        * get count dates of one page
+        */
        static public function getCountDates()
        {
            $html_download = new HtmlDownload();

@@ -1,22 +1,25 @@
 <?php
 
-    include_once 'library/simple_html_dom.php';
- 
+
    class HtmlParser
    {
 
-    public function parse(string $html = '',string $tg = '')
+   /**
+    *  return array of elements by parameters
+    */
+    public static function parse(string $html = '', string $tg = '')
     {
         if(strlen($tg) > 1 && strlen($html) > 1)
         {
-         $html = str_get_html($html); 
-         return $this->find($html,$tg);
+          $html = str_get_html($html);
+          return HtmlParser::find($html,$tg);
         }
-        echo 'error parse';
         return null;
     }
 
-    private function find(simple_html_dom $html,string $tg)
+
+
+    private static function find(simple_html_dom $html,string $tg)
     {
       if(count($html->find($tg)))
         {
@@ -25,7 +28,6 @@
             $array[] = $div;
             return $array;
         }
-        echo 'error find';
         return null;
     }
 
