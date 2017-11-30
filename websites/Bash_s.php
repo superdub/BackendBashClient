@@ -1,491 +1,474 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: dubrovin
- * Date: 07.11.17
- * Time: 17:17
- */
 
 
-class Bash_s
+class Bash_s extends WebSite
 {
-
-    private $countQuotes;
-
+    /**
+     * get Count Quotes on One page
+     * Bash_s constructor.
+     */
     public function __construct()
     {
-        try {
-            $this->countQuotes = BashInfo::getCountQuotes();
-        }
-        catch (Exception $exception)
-        {
-            $this->countQuotes = BashInfo::$BASH_COUNT;
-        }
+        $this->countElements = BashInfo::getCountQuotes();
     }
 
 
     /**
-     * @param $ost
-     * @param $del
-     * @return array of count page and quotes on last page
+     * @param $html
+     * @return int count texts on any page
      */
-    private function getCountPages(int $ost, int $del)
+    private function getCountQuotesOnPage($html)
     {
-        return [floor($ost/$del) + 1,$ost%$del];
+        $array_text = HtmlParser::parse(iconv("windows-1251", "UTF-8", $html),BashInfo::$TagText);
+        return count($array_text);
     }
 
 
     /**
-     * this function parse page for BashQuotes
+     * @return $index of main page
      */
-    private function parseForBashQuotes(&$html_page, &$dates, &$texts, &$likes, &$ids)
-    {
-        if($html_page != null)
-        {
-            try {
-                echo strlen($html_page),'      ';
-                foreach (HtmlParser::parse(iconv("windows-1251", "UTF-8", $html_page), 'div.text') as $text1) {
-                    $texts[] = $text1->innertext;
-                }
-                foreach (HtmlParser::parse(iconv("windows-1251", "UTF-8", $html_page), 'span.rating') as $text1) {
-                    $likes[] = $text1->innertext;
-                }
-                foreach (HtmlParser::parse(iconv("windows-1251", "UTF-8", $html_page), 'span.date') as $text1) {
-                    $dates[] = $text1->innertext;
-                }
-                foreach (HtmlParser::parse(iconv("windows-1251", "UTF-8", $html_page), 'a.id') as $text1) {
-                    $ids[] = $text1->innertext;
-                }
-            }
-            catch (Exception $exception){echo $exception;return null;}
-        }
-    }
-
-
-    /**
-     * @return int index Bash.im main page
-     */
-    private function getMainIndexPage()
+    public function getMainIndex()
     {
         $html_page = HtmlDownload::download(BashInfo::$BASH_URL);
-        try
-        {
-        foreach(HtmlParser::parse(iconv("windows-1251", "UTF-8", $html_page),'div.pager') as $text1) {
-            foreach (HtmlParser::parse(iconv("windows-1251", "UTF-8", $text1), 'form') as $text2) {
+
+        foreach(HtmlParser::parse(iconv("windows-1251", "UTF-8", $html_page),'div.pager') as $key=>$text1) {
+            foreach (HtmlParser::parse(iconv("windows-1251", "UTF-8", $text1), 'form') as $key2=>$text2) {
                 $mas = HtmlParser::parse(iconv("windows-1251", "UTF-8", $text2), '.page');
                 $str = (int)strripos($mas[0], 'value');
                 $str = substr($mas[0], $str, $str + 5);
-                $str = str_replace('value="', '', $str);
-                $str = str_replace('" />', '', $str);
+                $str = str_replace(['value="','" />'], '', $str);
                 return (int)$str;
-               }
             }
         }
-        catch (Exception $exception){echo $exception;return null;}
         return null;
     }
 
-
     /**
-     *  add Quotes in $arrays
+     * return array of quotes
+     * @param $html_page
+     * @param int $first
+     * @param int $last
+     * @return array
      */
-    private function getQuotesWithNumberToCount(&$html_page, $number, $count,&$texts,&$likes,&$dates,&$ids)
+    public function getQuotesOnPage(&$html_page, int $first, int $last ,$tagText = 'div.text',$tagId = 'a.id',$tagDate = 'span.date',$tagRate = 'span.rating')
     {
+        $array = [];
+        if($first==0 || $last == 0) {echo 'first or last can\'t be 0  ';return null;}
+        if($first > $last){echo "first($first) > last($last)";return null;}
+        $parseArray = HtmlParser::parses(iconv("windows-1251", "UTF-8", $html_page),[$tagDate,$tagId,$tagText,$tagRate]);
 
-        $_likes =[];
-        $_texts =[];
-        $_dates =[];
-        $_ids =[];
+        $first--;
 
-        $this->parseForBashQuotes($html_page,$_dates,$_texts,$_likes,$_ids);
+        $quote = null;$id = null;$date = null;$text = null;$rate = null;
+        $length = count($parseArray);
 
-
-        for ($i = $number; $i <= $count; $i++)
+        for ($i = 0;$i < $length;++$i)
         {
-           if($i>=0 && $i < count($_texts))
-           {
-               $likes[] = $_likes[$i];
-               $texts[] = $_texts[$i];
-               $dates[] = $_dates[$i];
-               $ids[] = $_ids[$i];
-           }
-        }
-    }
-
-
-    /**
-     * @param string $parameters
-     * @return string json of Quotes from Bash.im main web page with first quotes on main page
-     */
-    public function getQuotesWithMain(string $parameters)
-    {
-        if(!is_numeric($parameters)) {echo 'parameters is not number'; return null;}
-
-        if((int)$parameters == 0) {echo 'parameters can not 0'; return null;}
-
-        if($parameters != null && strlen($parameters) > 0)
-        {
-            $array = new BashQuotes();
-
-            $parameters = (int)$parameters;
-
-            $count = $this->getCountPages($parameters,$this->countQuotes);
-
-
-            $likes =[];
-            $texts =[];
-            $dates =[];
-            $ids =[];
-
-            $MainIndex = $this->getMainIndexPage();
-
-           for($i=0,$length=$count[0]-1;$i<$length;$i++)
+            switch ($parseArray[$i]->class)
             {
-                $index = $MainIndex - $i;
-                $html_page = HtmlDownload::download(BashInfo::$BASH_URL.'index/'.$index);
-                $this->parseForBashQuotes($html_page,$dates,$texts,$likes,$ids);
-                unset($html_page);
-            }
-
-
-            $index = $MainIndex -$count[0] +1;
-            $html_page = HtmlDownload::download(BashInfo::$BASH_URL.'index/'.$index);
-
-
-            $this->getQuotesWithNumberToCount($html_page,0,$count[1]-1,$texts,$likes,$dates,$ids);
-
-            unset($html_page);
-
-            for ($i=0;$i<$parameters;$i++)
-            {
-                $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
-            }
-
-            unset($ids);
-            unset($texts);
-            unset($likes);
-            unset($dates);
-            return $array->Get();
-        }
-         echo 'parameters is null or wrong';
-        return null;
-    }
-
-
-    /**
-     * @param string $number
-     * @param string $count
-     * @return string json quotes from $number to $count with main page
-     */
-    public function getQuotesWithNumber(string $number,string $count)
-    {
-        if(!is_numeric($number) || !is_numeric($count)) {echo 'parameters is not number'; return null;}
-
-        if((int)$number == 0) {echo 'number of first quotes can not 0';return null;}
-
-        if($count != null && strlen($count) > 0 && $number != null && strlen($number) > 0 && $number > 0 && $count > 0) {
-
-            $number = (int)$number;
-            $count = (int)$count;
-
-            $array = new BashQuotes();
-
-            $likes =[]; $_likes =[];
-            $texts =[];  $_texts =[];
-            $dates =[];  $_dates =[];
-            $ids =[];  $_ids =[];
-
-
-            $countPageBeforeFirst = $this->getCountPages($number,$this->countQuotes);
-            $countPageAfterFirst = $this->getCountPages($number+$count,$this->countQuotes);
-
-
-            $indexPageBefore = $this->getMainIndexPage() - $countPageBeforeFirst[0] + 1;
-
-
-            $linkPageFirst = BashInfo::$BASH_URL.'index/'.$indexPageBefore;
-
-
-            $html_page_first = HtmlDownload::download($linkPageFirst);
-
-
-
-           if($countPageAfterFirst[1] > $countPageBeforeFirst[1] && $countPageAfterFirst[0]  == $countPageBeforeFirst[0]) {
-
-               $this->parseForBashQuotes($html_page_first,$dates,$texts,$likes,$ids);
-
-               for ($i = $countPageBeforeFirst[1]-1; $i < $countPageAfterFirst[1]-1; $i++)
-               {
-                   $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
-               }
-
-               unset($html_page_first);
-               unset($likes);
-               unset($texts);
-               unset($dates);
-               unset($ids);
-               return $array->Get();
-            }
-
-
-             $this->getQuotesWithNumberToCount($html_page_first,$countPageBeforeFirst[1],$this->countQuotes-1,$texts,$likes,$dates,$ids);
-
-             unset($html_page_first);
-
-            if(count($texts) == $count)
-            {
-                for($i=0;$i<$count;$i++)
+                case 'date':
                 {
-                    $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+                    $date = $parseArray[$i]->innertext; break;
                 }
-                return $array->Get();
-            }
-
-            for($i=$countPageBeforeFirst[0]+1;$i<$countPageAfterFirst[0];$i++)
-            {
-                $index = $indexPageBefore - $i;
-                $link = BashInfo::$BASH_URL.'index/'.$index;
-                $this->getQuotesWithNumberToCount($link,0,$this->countQuotes-1,$texts,$likes,$dates,$ids);
-            }
-
-            if(count($texts) == $count)
-            {
-                for($i=0;$i<$count;$i++)
+                case 'id':
                 {
-                    $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+                    $id = $parseArray[$i]->innertext; break;
                 }
-                return $array->Get();
+                case 'rating':
+                {
+                    $rate = $parseArray[$i]->innertext; break;
+                }
+                case 'text':
+                {
+                    $text = $parseArray[$i]->innertext;$text = str_replace(['&quot;','<br />','<br>','/>','\\','\'','\"'],' ',$text); break;
+                }
             }
 
-
-
-            $index = $this->getMainIndexPage()-$countPageAfterFirst[0];
-
-
-
-            $html_page_first = HtmlDownload::download(BashInfo::$BASH_URL.'index/'.$index);
-
-
-            $this->getQuotesWithNumberToCount($html_page_first,0,$countPageAfterFirst[1]-1,$texts,$likes,$dates,$ids);
-
-
-            for($i=0;$i<$count;$i++)
+            if($id != null && $date != null && $rate != null && $text != null)
             {
-                $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+                $quote = new Quote($id,$text,$rate,$date);
+                $quote->text = $text;
+                $array[] = $quote;
+                $quote = null;$id = null;$date = null;$text = null;$rate = null;
             }
-
-            unset($html_page_first);
-            unset($texts); unset($_texts);
-            unset($likes);  unset($_likes);
-            unset($dates); unset($_dates);
-            unset($ids); unset($_ids);
-            return $array->Get();
-
         }
-        echo 'parameters is wrong or null';
-        return null;
+
+        for ($i = 0;$i < $first;++$i)
+        {
+            unset($array[$i]);
+        }
+        for ($i = $last;$i < $length;++$i)
+        {
+            unset($array[$i]);
+        }
+
+        $array1 = [];
+        foreach ($array as $key => $value)
+            $array1[] = $value;
+
+        return $array1;
     }
 
-
     /**
-     * @param string $id
-     * @return string json quote by id but this function can not find quote
+     * return json array of elements starting with the main page
+     * @param string $count
+     * @return string json array
      */
-    public function getQuotesById(string $id)
+    public function getElementsWithMainPage(string $count)
     {
-        if(!is_numeric($id)) {echo 'parameters is not number'; return null;}
-        if($id != null && strlen($id) > 0 && (int)$id != 0 && (int)$id > 0) {
-            $html_parser = new HtmlParser();
-            $html_download = new HtmlDownload();
-            $quote = new BashQuotes();
-            $text = [];
-            $id = [];
-            $like = [];
-            $date = [];
+        if(!is_numeric($count)) {echo 'number of count\'s quotes is not number'; return null;}
+        if((int)$count == 0) {echo 'count can not 0'; return null;}
 
-            $url = BashInfo::$BASH_URL.'quote/'.$id;
-            $html_page = $html_download -> download($url);
+        $array = [];
 
-            if(strlen($html_page) <= 0) {echo 'wrong this quote don\'t found'; return null;}
-            $this->parseForBashQuotes($html_parser,$html_page,$date,$text,$like,$id);
-            $quote->Add($id[0],$text[0],$like[0],$date[0]);
+        $mainIndex = $this->getMainIndex();
 
-            unset($html_page);
-            unset($html_download);
-            unset($html_parser);
-            return $quote->Get();
+        $countPage = $this->getCountPages($count,$this->countElements);
+
+        for ($i = 0;$i < $countPage[0] - 1;++$i)
+        {
+          $index = $mainIndex - $i;
+          $htmlPage = HtmlDownload::download(BashInfo::$BASH_URL.'index/'.$index);
+          $arr = $this->getQuotesOnPage($htmlPage,1,$this->countElements);
+          $length = count($arr);
+          for($j = 0;$j < $length;++$j) $array[] = $arr[$j];
+          unset($arr);
+          unset($htmlPage);
         }
-        echo 'parameters is null or wrong'; return null;
+
+        if($countPage[1] != 0){
+            $htmlPage = HtmlDownload::download(BashInfo::$BASH_URL.'index/'.($mainIndex-$countPage[0] + 1));
+            $arr = $this->getQuotesOnPage($htmlPage,1,$countPage[1]);
+            $length = count($arr);
+            for($j = 0;$j < $length;++$j) $array[] = $arr[$j];}
+
+        echo count($array),'   ';
+
+        return json_encode($array,JSON_UNESCAPED_UNICODE);
     }
 
-
     /**
+     * return json array of elements starting with $number
      * @param string $number
      * @param string $count
-     * @return string json all quotes by random page
+     * @return string json array
      */
-    public function getRandomQuotes()
+    public function getElementsWithNumber(string $number, string $count)
     {
+        if(!is_numeric($count) || !is_numeric($number)) {echo 'number of count\'s quotes is not number'; return null;}
+        if((int)$count == 0 || (int)$number == 0) {echo 'number or count can not 0'; return null;}
 
-        $html_parser = new HtmlParser();
-        $html_download = new HtmlDownload();
-        $html_page = $html_download->download(BashInfo::$BASH_URL.'random/');
-        $array = new BashQuotes();
+        $array = [];
 
-        $likes =[];
-        $texts =[];
-        $dates =[];
-        $ids =[];
+        $countPageBeforeNumber = $this->getCountPages($number,$this->countElements);
+        $countAllPages = $this->getCountPages($count,$this->countElements);
 
-        $this->parseForBashQuotes($html_parser,$html_page,$dates,$texts,$likes,$ids);
+        $mainIndex = $this->getMainIndex();
+
+        $indexFirstPage = $mainIndex - $countPageBeforeNumber[0] + 1;
+        $indexLastPage = $indexFirstPage - $countAllPages[0];
+
+        $htmlPage = HtmlDownload::download(BashInfo::$BASH_URL.'index/'.$indexFirstPage);
+
+      if($countPageBeforeNumber[1] + $count - 1 <= $this->countElements)
+      {
+          $arr = $this->getQuotesOnPage($htmlPage,$countPageBeforeNumber[1],$count+$countPageBeforeNumber[1]- 1);
+
+          foreach ($arr as $value => $item) $array[] = $item;
+
+          return json_encode($array,JSON_UNESCAPED_UNICODE);
+      }
 
 
-        for ($i = 0; $i < $this->countQuotes; $i++)
+        $arr = $this->getQuotesOnPage($htmlPage,$countPageBeforeNumber[1],$this->countElements - 1);
+        $length = count($arr);
+        for($j = 0;$j < $length;++$j) if(count($array) < $count) $array[] = $arr[$j];
+
+        for ($i = $indexFirstPage-1;$i > $indexLastPage;--$i)
         {
-            $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
+            $htmlPage = HtmlDownload::download(BashInfo::$BASH_URL.'index/'.$i);
+            $arr = $this->getQuotesOnPage($htmlPage,1,$this->countElements);
+            $length = count($arr);
+            for($j = 0;$j < $length;++$j) if(count($array) < $count) $array[] = $arr[$j];
+            unset($arr);
+            unset($htmlPage);
+            if(count($array) == $count) return json_encode($array,JSON_UNESCAPED_UNICODE);
         }
 
-        unset($html_parser);
-        unset($html_download);
-        unset($html_page);
-        unset($likes);
-        unset($texts);
-        unset($dates);
-        unset($ids);
-        return $array->Get();
+        if(count($array) == $count) return json_encode($array,JSON_UNESCAPED_UNICODE);
 
+        if($countAllPages[1] != 0)
+        {
+            $htmlPage = HtmlDownload::download(BashInfo::$BASH_URL.'index/'.$indexLastPage);
+            $arr = $this->getQuotesOnPage($htmlPage,1,$countAllPages[1]);
+            $length = count($arr);
+            for($j = 0;$j < $length;++$j){ if(count($array) < $count) $array[] = $arr[$j]; }
+        }
+
+      return json_encode($array,JSON_UNESCAPED_UNICODE);
     }
-
 
     /**
+     * return json array of elements on random page
+     * @return string json array
+     */
+    public function getRandomElements()
+    {
+        $linkPage = BashInfo::$BASH_URL.'random';
+
+        $htmlPage = HtmlDownload::download($linkPage);
+
+        $arrayQuotes = $this->getQuotesOnPage($htmlPage,1,$this->countElements);
+
+        unset($htmlPage);
+        return json_encode($arrayQuotes,JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * return json array of elements starting with rating page
+     * @param string $count
+     * @return string json array
+     */
+    public function getRatingElementsWithMainPage(string $count)
+    {
+        if(!is_numeric($count)) {echo 'number of count\'s quotes is not number  '; return null;}
+        if((int)$count == 0) {echo 'count can not 0  '; return null;}
+
+        $array = [];
+        $linkPage = BashInfo::$BASH_URL.'byrating/';
+
+        $countPage = $this->getCountPages($count,$this->countElements);
+
+
+        for ($i = 1;$i < $countPage[0];++$i)
+        {
+            $link = $linkPage;
+            $link.=$i;
+            $htmlPage = HtmlDownload::download($link);
+            $arr = $this->getQuotesOnPage($htmlPage,1,$this->countElements);
+            $length = count($arr);
+            for($j = 0;$j < $length;++$j) $array[] = $arr[$j];
+            unset($arr);
+            unset($htmlPage);
+        }
+
+        $htmlPage = HtmlDownload::download($linkPage.$countPage[0]);
+        if($countPage[1]!=0)
+        {
+            $arr = $this->getQuotesOnPage($htmlPage,1,$countPage[1]);
+            $length = count($arr);
+            for($j = 0;$j < $length;++$j) $array[] = $arr[$j];
+        }
+
+        return json_encode($array,JSON_UNESCAPED_UNICODE);
+
+    }
+
+    /**
+     * return json array of elements starting with $number
      * @param string $number
      * @param string $count
-     * @return string json random some quotes
+     * @return string json array
      */
-    public function getRandomQuotesWithNumber(string $count)
+    public function getRatingElementsWithNumber(string $number, string $count)
     {
-        if(!is_numeric($count)) {echo 'parameters is not number'; return null;}
-        if((int)$count == 0) {echo 'number of first quotes can not 0';return null;}
+        if(!is_numeric($count) || !is_numeric($number)) {echo 'number of count\'s quotes is not number'; return null;}
+        if((int)$count == 0 || (int)$number == 0) {echo 'number or count can not 0'; return null;}
 
-        if($count != null && strlen($count) > 0 && $count > 0) {
-            $html_parser = new HtmlParser();
-            $html_download = new HtmlDownload();
-            $count = (int)$count;
+        $array = [];
 
-            $array = new BashQuotes();
-            $count_page = $this->getCountPages($count,$this->countQuotes);
+        $countPageBeforeNumber = $this->getCountPages($number,$this->countElements);
+        $countAllPages = $this->getCountPages($count,$this->countElements);
 
-            $likes =[];
-            $texts =[];
-            $dates =[];
-            $ids =[];
-            $_likes =[];
-            $_texts =[];
-            $_dates =[];
-            $_ids =[];
-
-            for($i=0;$i<$count_page[0]-1;$i++)
-            {
-
-                $html_page = $html_download->download(BashInfo::$BASH_URL.'random/');
-
-                $this->parseForBashQuotes($html_parser,$html_page,$dates,$texts,$likes,$ids);
-            }
-
-            $html_page = $html_download->download(BashInfo::$BASH_URL.'random/');
-            $this->parseForBashQuotes($html_parser,$html_page,$_dates,$_texts,$_likes,$_ids);
-
-            for($i = 0;$i<$count_page[1];$i++)
-            {
-                $likes[] = $_likes[$i];
-                $texts[] = $_texts[$i];
-                $dates[] = $_dates[$i];
-                $ids[] = $_ids[$i];
-            }
-            for($i = 0;$i<$count;$i++)
-            {
-                $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
-            }
-            return $array->Get();
-        }
-        echo 'parameters is wrong or null';
-        return null;
-    }
+        $indexFirstPage = $countPageBeforeNumber[0];
+        $indexLastPage = $indexFirstPage + $countAllPages[0];
 
 
+        $htmlPage = HtmlDownload::download(BashInfo::$BASH_URL.'byrating/'.$indexFirstPage);
 
-    //todo дописать метод
-    public function getRatingQuotesWithMain(string $parameters)
-    {
-        if(!is_numeric($parameters)) {echo 'parameters is not number'; return null;}
-        if($parameters != null && strlen($parameters) > 0)
+        if($countPageBeforeNumber[1] + $count - 1 <= $this->countElements)
         {
-            $html_download = new HtmlDownload();
-            $htmlParser = new HtmlParser();
-            $array = new BashQuotes();
-            $parameters = (int)$parameters;
-            $count = $this->getCountPages($parameters,$this->countQuotes);
-            $likes =[];
-            $texts =[];
-            $dates =[];
-            $ids =[];
-            for($i=1;$i<$count[0]-1;$i++)
-            {
-                $index = $this->getMainIndexPage() + $i;
-                $html_page = $html_download -> download(BashInfo::$BASH_URL.'byrating/'.$index);
-                $this->parseForBashQuotes($html_parser,$html_page,$dates,$texts,$likes,$ids);
-            }
-            $index = 1 + $count[0]+1;
-            $html_page = $html_download -> download(BashInfo::$BASH_URL.'byrating/'.$index);
-            echo $index,'          ';
-            $i = $count[1];
-
-
-            //улучшить код
-
-            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'div.text') as $text1)
-            {
-                if(!$i) break;
-                $i--;
-                $texts[] = $text1->innertext;
-            }
-            $i = $count[1];
-            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.rating') as $text1)
-            {
-                if(!$i) break;
-                $i--;
-                $likes[] = $text1->innertext;
-            }
-            $i = $count[1];
-            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'span.date') as $text1)
-            {
-                if(!$i) break;
-                $i--;
-                $dates[] = $text1->innertext;
-            }
-            $i = $count[1];
-            foreach($htmlParser->parse(iconv("windows-1251", "UTF-8", $html_page),'a.id') as $text1)
-            {
-                if(!$i) break;
-                $i--;
-                $ids[] = $text1->innertext;
-            }
-
-            for ($i=0;$i<$parameters;$i++)
-            {
-                $array->Add($ids[$i],$texts[$i],$likes[$i],$dates[$i]);
-            }
-
-            unset($html_download);
-            unset($htmlParser);
-            unset($ids);
-            unset($texts);
-            unset($likes);
-            unset($dates);
-            return $array->Get();
+            $arr = $this->getQuotesOnPage($htmlPage,$countPageBeforeNumber[1],$count+$countPageBeforeNumber[1]- 1);
+            foreach ($arr as $value => $item) $array[] = $item;
+            return json_encode($array,JSON_UNESCAPED_UNICODE);
         }
-        echo 'parameters is null or wrong';
-        return null;
+
+        $arr = $this->getQuotesOnPage($htmlPage,$countPageBeforeNumber[1],$this->countElements - 1);
+
+        $length = count($arr);
+        for($j = 0;$j < $length;++$j) if(count($array) < $count) $array[] = $arr[$j];
+
+        for ($i = $indexFirstPage+1;$i < $indexLastPage;++$i)
+        {
+            $htmlPage = HtmlDownload::download(BashInfo::$BASH_URL.'byrating/'.$i);
+            $arr = $this->getQuotesOnPage($htmlPage,1,$this->countElements);
+
+            $length = count($arr);
+            for($j = 0;$j < $length;++$j) if(count($array) < $count) $array[] = $arr[$j];
+
+            unset($arr);
+            unset($htmlPage);
+            if(count($array) == $count) return json_encode($array,JSON_UNESCAPED_UNICODE);
+        }
+
+        if(count($array) == $count) return json_encode($array,JSON_UNESCAPED_UNICODE);
+
+        if($countAllPages[1] != 0)
+        {
+            $htmlPage = HtmlDownload::download(BashInfo::$BASH_URL.'byrating/'.$indexLastPage);
+            $arr = $this->getQuotesOnPage($htmlPage,1,$countAllPages[1]);
+            $length = count($arr);
+            for($j = 0;$j < $length;++$j){ if(count($array) < $count) $array[] = $arr[$j]; }
+        }
+
+        return json_encode($array,JSON_UNESCAPED_UNICODE);
     }
 
+    /**
+     * return json object by his id
+     * @return string json object
+     */
+    public function getElementById(string $id)
+    {
+        $linkPage = BashInfo::$BASH_URL.'quote/'.$id;
+
+        $htmlPage = HtmlDownload::download($linkPage);
+        if($htmlPage==null) {return null;};
+
+        $parseArray = $this->getQuotesOnPage($htmlPage,1,1);
+        $jsonObject = json_encode($parseArray[0],JSON_UNESCAPED_UNICODE);
+
+        return $jsonObject;
+    }
+
+    /**
+     * return json array of elements on abyss page
+     * @return string json array
+     */
+    public function getAbyssElements()
+    {
+        $linkPage = BashInfo::$BASH_URL.'abyss';
+
+        $htmlPage = HtmlDownload::download($linkPage);
+        $countQuotes = $this->getCountQuotesOnPage($htmlPage);
+
+        $arrayQuotes = $this->getQuotesOnPage($htmlPage,1,$countQuotes,BashInfo::$TagText,'span.id');
+
+        unset($htmlPage);
+        return json_encode($arrayQuotes,JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * return json array of elements on top abyss page
+     * @return string json array
+     */
+    public function getTopAbyssElements()
+    {
+        $linkPage = BashInfo::$BASH_URL.'abysstop';
+
+        $htmlPage = HtmlDownload::download($linkPage);
+
+        $array = [];
+
+        $parseArray = HtmlParser::parses(iconv("windows-1251", "UTF-8", $htmlPage),[BashInfo::$TagText,'span.abysstop','span.abysstop-date']);
+
+        $quote = null;$id = null;$date = null;$text = null;
+        $length = count($parseArray);
+
+        for ($i = 0;$i < $length;++$i)
+        {
+            switch ($parseArray[$i]->class)
+            {
+                case 'abysstop-date':
+                {
+                    $date = $parseArray[$i]->innertext; break;
+                }
+                case 'abysstop':
+                {
+                    $id = $parseArray[$i]->innertext; break;
+                }
+                case 'text':
+                {
+                    $text = str_replace(['&quot;', '<br />', '<br>', '/>', '\\', '\'', '\"'], ' ', $parseArray[$i]->innertext);
+                    break;
+                }
+            }
+            if($id != null && $date != null && $text != null)
+            {
+                $quote = new Quote($id,$text,null,$date);
+                $array[] = $quote;
+                $quote = null;$id = null;$date = null;$text = null;
+            }
+        }
+
+       unset($htmlPage);
+       return json_encode($array,JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * return array links on picture with number to count
+     * @param $number
+     * @param $count
+     * @return string json array
+     */
+    public function getComicsElements($number, $count)
+    {
+        //TODO done method
+        $htmlPage = HtmlDownload::download(BashInfo::$BASH_URL.'comics/');
+        $array = HtmlParser::parse(iconv("windows-1251", "UTF-8", $htmlPage),'img[id=cm_strip]');
+        $str = $array[0];
+        $str= str_replace(['img src="','"','id=cm_strip />','<'],'',$str);
+
+        return json_encode($array,JSON_UNESCAPED_UNICODE);
+    }
+
+    public function getComicsForQuotes($id)
+    {
+
+        //TODO done method
+        $linkPage = BashInfo::$BASH_URL.'quote/'.$id;
+
+        $htmlPage = HtmlDownload::download($linkPage);
+        if($htmlPage==null) {return null;};
+
+        $parseArray = $this->getQuotesOnPage($htmlPage,1,1);
+
+        $date = $parseArray[0]->date;
+
+        $length = strlen($date);
+        $time = substr($date,$length-5);
+        $date = str_replace([$time,'-',' '],'',$date);
+
+        $comicsPage = HtmlDownload::download(BashInfo::$BASH_URL.'comics/'.$date);
+
+        $arr = HtmlParser::parse(iconv("windows-1251", "UTF-8", $comicsPage),'title');
+
+        $title = '';
+        foreach ($arr as $value) $title.=$value->innertext;
+
+
+        $beginId = 0;$countId = 0;$findId = false;
+
+        for ($i = 0,$length = strlen($title);$i < $length;++$i)
+        {
+            if($findId && !is_numeric($title[$i])) {break;}
+            if($title[$i] == '#') {$beginId = $i;$findId = true;}
+
+            if($findId) $countId++;
+        }
+
+
+
+        $title = substr($title,$beginId,$countId);
+        $title = str_replace('#','',$title);
+
+        if($title == $id)
+        {
+
+        }
+
+        echo $title;
+
+       // $jsonObject = json_encode($parseArray[0],JSON_UNESCAPED_UNICODE);
+    }
 }

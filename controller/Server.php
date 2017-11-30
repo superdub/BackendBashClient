@@ -6,17 +6,24 @@
       public $ithappens_s;
       public $zadolba_s;
 
-      public function  __construct($countQuotes)
+      public function  __construct()
       {
-          $this->bash_s = new Bash_s();
-          echo $this->bash_s->getQuotesWithNumber('30','1000');
-          //echo $this->bash_s->getQuotesById('447600');
-          //echo $this->bash_s->getQuotesWithMain('120');
-          //echo $this->bash_s->getRandomQuotes();
-          //echo $this->bash_s->getRandomQuotesWithNumber('303');
-          //echo $this->bash_s->getRatingQuotesWithMain('10');
-      }
 
+          //TODO test methods
+
+          $this->bash_s = new Bash_s();
+          //not echo $this->bash_s->getMainIndex();
+          //not echo $this->bash_s->getRandomElements();
+          //not echo $this->bash_s->getElementsWithMainPage(50);
+          //not echo $this->bash_s->getElementById('4555');
+          //not echo $this->bash_s->getRatingElementsWithMainPage(3000);
+          //not echo $this->bash_s->getElementsWithNumber(145,345);
+          //not echo $this->bash_s->getRatingElementsWithNumber(808,80);
+          //not echo $this->bash_s->getAbyssElements();
+          //not echo $this->bash_s->getTopAbyssElements();
+         // echo $this->bash_s->getComicsElements(1,5);
+          echo $this->bash_s->getComicsForQuotes('447676');
+      }
 
       public function HandlerUser(string $command = '',string $parameters = '')
       {
