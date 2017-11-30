@@ -22,7 +22,7 @@
           //not echo $this->bash_s->getAbyssElements();
           //not echo $this->bash_s->getTopAbyssElements();
          // echo $this->bash_s->getComicsElements(1,5);
-          echo $this->bash_s->getComicsForQuotes('447676');
+          echo $this->bash_s->getComicsForQuotes('390648');
       }
 
       public function HandlerUser(string $command = '',string $parameters = '')

@@ -424,51 +424,29 @@ class Bash_s extends WebSite
 
     public function getComicsForQuotes($id)
     {
-
-        //TODO done method
         $linkPage = BashInfo::$BASH_URL.'quote/'.$id;
 
         $htmlPage = HtmlDownload::download($linkPage);
-        if($htmlPage==null) {return null;};
 
-        $parseArray = $this->getQuotesOnPage($htmlPage,1,1);
+        $Array = HtmlParser::parse(iconv("windows-1251", "UTF-8", $htmlPage),'a.comics');
 
-        $date = $parseArray[0]->date;
+        if(empty($Array)) return null;
 
-        $length = strlen($date);
-        $time = substr($date,$length-5);
-        $date = str_replace([$time,'-',' '],'',$date);
+        $tagComics = '';
+        foreach ($Array as $value) $tagComics.=$value;
 
-        $comicsPage = HtmlDownload::download(BashInfo::$BASH_URL.'comics/'.$date);
+        $tagComics = str_replace(['<a href="/','" class="comics">Комикс</a>'],'',$tagComics);
 
-        $arr = HtmlParser::parse(iconv("windows-1251", "UTF-8", $comicsPage),'title');
+        $linkPagePicture = BashInfo::$BASH_URL.$tagComics;
 
-        $title = '';
-        foreach ($arr as $value) $title.=$value->innertext;
+        $htmlPagePicture = HtmlDownload::download($linkPagePicture);
 
-
-        $beginId = 0;$countId = 0;$findId = false;
-
-        for ($i = 0,$length = strlen($title);$i < $length;++$i)
-        {
-            if($findId && !is_numeric($title[$i])) {break;}
-            if($title[$i] == '#') {$beginId = $i;$findId = true;}
-
-            if($findId) $countId++;
-        }
+        $arrayPagePicture = HtmlParser::parse(iconv("windows-1251", "UTF-8", $htmlPagePicture),'img[id="cm_strip"]');
 
 
+        $linkPicture = str_replace(['<img src="','" id="cm_strip" />'],'',$arrayPagePicture[0]);
 
-        $title = substr($title,$beginId,$countId);
-        $title = str_replace('#','',$title);
+        return $linkPicture;
 
-        if($title == $id)
-        {
-
-        }
-
-        echo $title;
-
-       // $jsonObject = json_encode($parseArray[0],JSON_UNESCAPED_UNICODE);
     }
 }
