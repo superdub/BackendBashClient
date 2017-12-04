@@ -9,6 +9,12 @@ abstract class WebSite
      */
      protected $countElements;
 
+
+    /**
+     * @return int main index
+     */
+    abstract public function getMainIndex();
+
     /**
      * @param $ost
      * @param $del
@@ -18,11 +24,6 @@ abstract class WebSite
     {
         return [floor($ost/$del) + 1,$ost%$del];
     }
-
-    /**
-     * @return $index of main page
-     */
-    abstract public function getMainIndex();
 
     /**
      * return json array of elements starting with the main page

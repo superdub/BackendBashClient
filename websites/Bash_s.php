@@ -25,7 +25,7 @@ class Bash_s extends WebSite
 
 
     /**
-     * @return $index of main page
+     * @return int $index of main page
      */
     public function getMainIndex()
     {
@@ -142,7 +142,6 @@ class Bash_s extends WebSite
             $length = count($arr);
             for($j = 0;$j < $length;++$j) $array[] = $arr[$j];}
 
-        echo count($array),'   ';
 
         return json_encode($array,JSON_UNESCAPED_UNICODE);
     }
@@ -172,7 +171,8 @@ class Bash_s extends WebSite
 
       if($countPageBeforeNumber[1] + $count - 1 <= $this->countElements)
       {
-          $arr = $this->getQuotesOnPage($htmlPage,$countPageBeforeNumber[1],$count+$countPageBeforeNumber[1]- 1);
+          echo $countPageBeforeNumber[1],'   ',$count+$countPageBeforeNumber[1]- 1,'  ';
+          $arr = $this->getQuotesOnPage($htmlPage,$countPageBeforeNumber[1]+1,$count+$countPageBeforeNumber[1]- 1);
 
           foreach ($arr as $value => $item) $array[] = $item;
 
@@ -288,7 +288,7 @@ class Bash_s extends WebSite
 
         if($countPageBeforeNumber[1] + $count - 1 <= $this->countElements)
         {
-            $arr = $this->getQuotesOnPage($htmlPage,$countPageBeforeNumber[1],$count+$countPageBeforeNumber[1]- 1);
+            $arr = $this->getQuotesOnPage($htmlPage,$countPageBeforeNumber[1]+1,$count+$countPageBeforeNumber[1]- 1);
             foreach ($arr as $value => $item) $array[] = $item;
             return json_encode($array,JSON_UNESCAPED_UNICODE);
         }
@@ -330,6 +330,7 @@ class Bash_s extends WebSite
      */
     public function getElementById(string $id)
     {
+        if($id == null) echo 'id isn\'t null';
         $linkPage = BashInfo::$BASH_URL.'quote/'.$id;
 
         $htmlPage = HtmlDownload::download($linkPage);
@@ -413,17 +414,25 @@ class Bash_s extends WebSite
      */
     public function getComicsElements($number, $count)
     {
-        //TODO done method
+      //TODO done method;
         $htmlPage = HtmlDownload::download(BashInfo::$BASH_URL.'comics/');
         $array = HtmlParser::parse(iconv("windows-1251", "UTF-8", $htmlPage),'img[id=cm_strip]');
         $str = $array[0];
+
+
         $str= str_replace(['img src="','"','id=cm_strip />','<'],'',$str);
 
         return json_encode($array,JSON_UNESCAPED_UNICODE);
     }
 
+    /**
+     * return link on picture of quote
+     * @param $id
+     * @return mixed|null link on picture
+     */
     public function getComicsForQuotes($id)
     {
+        if($id == null) echo 'id isn\'t null';
         $linkPage = BashInfo::$BASH_URL.'quote/'.$id;
 
         $htmlPage = HtmlDownload::download($linkPage);
